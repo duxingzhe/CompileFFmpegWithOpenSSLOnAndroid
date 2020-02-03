@@ -3,7 +3,7 @@
 set -e
 
 # Set your own NDK here
-export NDK=/home/luxuan/Program/android-ndk-r15c
+export NDK=/home/luxuan/Program/android-ndk-r20b
 
 #export NDK=`grep ndk.dir $PROPS | cut -d'=' -f2`
 
@@ -14,22 +14,11 @@ fi
 
 export TARGET=$1
 
-ARM_PLATFORM=$NDK/platforms/android-21/arch-arm/
-ARM_PREBUILT=$NDK/toolchains/arm-linux-androideabi-4.9/prebuilt/linux-x86_64
+TOOLCHAIN=$NDK/toolchains/llvm/prebuilt/linux-x86_64/bin
+SYSROOT=$NDK/toolchains/llvm/prebuilt/linux-x86_64/sysroot
+API=22
 
-ARM64_PLATFORM=$NDK/platforms/android-21/arch-arm64/
-ARM64_PREBUILT=$NDK/toolchains/aarch64-linux-android-4.9/prebuilt/linux-x86_64
-
-X86_PLATFORM=$NDK/platforms/android-21/arch-x86/
-X86_PREBUILT=$NDK/toolchains/x86-4.9/prebuilt/linux-x86_64
-
-X86_64_PLATFORM=$NDK/platforms/android-21/arch-x86_64/
-X86_64_PREBUILT=$NDK/toolchains/x86_64-4.9/prebuilt/linux-x86_64
-
-MIPS_PLATFORM=$NDK/platforms/android-9/arch-mips/
-MIPS_PREBUILT=$NDK/toolchains/mipsel-linux-android-4.9/prebuilt/linux-x86_64
-
-FFMPEG_VERSION="4.1.4"
+FFMPEG_VERSION="4.2.2"
 
 TOP_ROOT=$PWD
 SOURCE=${TOP_ROOT}/src
@@ -94,30 +83,21 @@ echo $SSL_EXTRA_CFLAGS
 
 if [ $ARCH == "arm" ]
 then
-    PLATFORM=$ARM_PLATFORM
-    PREBUILT=$ARM_PREBUILT
-    HOST=arm-linux-androideabi
+    TOOLACHAIN_PREFIX=arm-linux-androideabi
+    TARGET=armv7a-linux-androideabi
 #added by alexvas
 elif [ $ARCH == "arm64" ]
 then
-    PLATFORM=$ARM64_PLATFORM
-    PREBUILT=$ARM64_PREBUILT
-    HOST=aarch64-linux-android
-elif [ $ARCH == "mips" ]
-then
-    PLATFORM=$MIPS_PLATFORM
-    PREBUILT=$MIPS_PREBUILT
-    HOST=mipsel-linux-android
-#alexvas
+    TOOLACHAIN_PREFIX=aarch64-linux-android
+    TARGET=aarch64-linux-android
 elif [ $ARCH == "x86_64" ]
 then
-    PLATFORM=$X86_64_PLATFORM
-    PREBUILT=$X86_64_PREBUILT
-    HOST=x86_64-linux-android
-else
-    PLATFORM=$X86_PLATFORM
-    PREBUILT=$X86_PREBUILT
-    HOST=i686-linux-android
+    TOOLACHAIN_PREFIX=x86_64-linux-android
+    TARGET=x86_64-linux-android
+elif [ $ARCH == "i686" ]
+then
+    TOOLACHAIN_PREFIX=i686-linux-android
+    TARGET=i686-linux-android
 fi
 
 pushd $FFMPEG_SOURCE
@@ -143,18 +123,20 @@ BINARIES_DIR=$BUILD_DIR/binaries/$ABI
 
 ./configure \
     --prefix=$PREFIX \
-    --target-os=linux \
+    --target-os=android \
     --incdir=$INCLUDE_DIR \
     --libdir=$BINARIES_DIR \
     --enable-cross-compile \
     --extra-libs="-lgcc" \
     --arch=$ARCH \
-    --cc=$PREBUILT/bin/$HOST-gcc \
-    --cross-prefix=$PREBUILT/bin/$HOST- \
-    --nm=$PREBUILT/bin/$HOST-nm \
-    --sysroot=$PLATFORM \
+    --cc=$TOOLCHAIN/$TARGET$API-clang \
+    --cxx=$TOOLCHAIN/$TARGET$API-clang++ \
+    --ld=$TOOLCHAIN/$TARGET$API-clang \
+    --nm=$TOOLCHAIN/$TOOLACHAIN_PREFIX-nm \
+    --cross-prefix=$TOOLCHAIN/$TOOLACHAIN_PREFIX- \
+    --sysroot=$SYSROOT \
     --extra-cflags="$OPTIMIZE_CFLAGS $SSL_EXTRA_CFLAGS" \
-    --extra-ldflags="-Wl,-rpath-link=$PLATFORM/usr/lib -L$PLATFORM/usr/lib -nostdlib -lc -lm -ldl -llog -lz $SSL_EXTRA_LDFLAGS -DOPENSSL_API_COMPAT=0x00908000L" \
+    --extra-ldflags="-Wl, -nostdlib -lc -lm -ldl -llog -lz $SSL_EXTRA_LDFLAGS -DOPENSSL_API_COMPAT=0x00908000L" \
     --disable-static \
     --disable-ffplay \
     --disable-ffmpeg \
@@ -178,9 +160,8 @@ BINARIES_DIR=$BUILD_DIR/binaries/$ABI
     --enable-protocol=file,ftp,http,https,httpproxy,hls,mmsh,mmst,pipe,rtmp,rtmps,rtmpt,rtmpts,rtp,sctp,srtp,tcp,udp \
     $ADDITIONAL_CONFIGURE_FLAG || die "Couldn't configure ffmpeg!"
 
-make clean
 make -j8 install V=1
-$PREBUILT/bin/$HOST-ar d libavcodec/libavcodec.a inverse.o
+$TOOLCHAIN/$TOOLACHAIN_PREFIX-ar d libavcodec/libavcodec.a inverse.o
 
 #$PREBUILT/bin/$HOST-ld -rpath-link=$PLATFORM/usr/lib -L$PLATFORM/usr/lib  -soname libffmpeg.so -shared -nostdlib  -z,noexecstack -Bsymbolic --whole-archive --no-undefined -o $PREFIX/libffmpeg.so libavcodec/libavcodec.a libavformat/libavformat.a libavutil/libavutil.a libswscale/libswscale.a -lc -lm -lz -ldl -llog  --warn-once  --dynamic-linker=/system/bin/linker $PREBUILT/lib/gcc/$HOST/4.6/libgcc.a
 popd
@@ -327,21 +308,6 @@ if [ $TARGET == 'x86' ]; then
     build_one
 fi
 
-if [ $TARGET == 'mips' ]; then
-    #mips
-    ABI=mips
-    CPU=mips
-    ARCH=mips
-    OPTIMIZE_CFLAGS="-std=c99 -O3 -Wall -pipe -fpic -fasm \
--ftree-vectorize -ffunction-sections -funwind-tables -fomit-frame-pointer -funswitch-loops \
--finline-limit=300 -finline-functions -fpredictive-commoning -fgcse-after-reload -fipa-cp-clone \
--Wno-psabi -Wa,--noexecstack"
-    #PREFIX=$BUILD_DIR/$CPU
-    PREFIX=`pwd`/../jni/ffmpeg/ffmpeg/mips
-    ADDITIONAL_CONFIGURE_FLAG=
-    build_one
-fi
-
 if [ $TARGET == 'armv7-a' ]; then
     #arm armv7-a
     ABI=armeabi-v7a
@@ -350,18 +316,6 @@ if [ $TARGET == 'armv7-a' ]; then
     OPTIMIZE_CFLAGS="-mfloat-abi=softfp -marm -march=$CPU "
     #PREFIX=`pwd`/ffmpeg-android/$CPU
     PREFIX=`pwd`/../jni/ffmpeg/ffmpeg/armeabi-v7a
-    ADDITIONAL_CONFIGURE_FLAG=
-    build_one
-fi
-
-if [ $TARGET == 'arm' ]; then
-    #arm arm
-    ABI=armeabi
-    CPU=arm
-    ARCH=arm
-    OPTIMIZE_CFLAGS=""
-    #PREFIX=`pwd`/ffmpeg-android/$CPU
-    PREFIX=`pwd`/../jni/ffmpeg/ffmpeg/armeabi
     ADDITIONAL_CONFIGURE_FLAG=
     build_one
 fi

@@ -1,10 +1,10 @@
 #!/bin/bash
-# Cross-compile environment for Android on ARMv7 and x86
+# Cross-compile environment for Android
 #
 
 export WORKING_DIR=`pwd`
 
-export NDK=/home/luxuan/Program/android-ndk-r15c
+export NDK=/home/luxuan/Program/android-ndk-r20b
 
 export ANDROID_NDK_ROOT=$NDK
 
@@ -18,22 +18,7 @@ fi
 
 export TARGET=$1
 
-ARM_PLATFORM=$NDK/platforms/android-21/arch-arm/
-ARM_PREBUILT=$NDK/toolchains/arm-linux-androideabi-4.9/prebuilt/linux-x86_64
-
-ARM64_PLATFORM=$NDK/platforms/android-21/arch-arm64/
-ARM64_PREBUILT=$NDK/toolchains/aarch64-linux-android-4.9/prebuilt/linux-x86_64
-
-X86_PLATFORM=$NDK/platforms/android-21/arch-x86/
-X86_PREBUILT=$NDK/toolchains/x86-4.9/prebuilt/dlinux-x86_64
-
-X86_64_PLATFORM=$NDK/platforms/android-21/arch-x86_64/
-X86_64_PREBUILT=$NDK/toolchains/x86_64-4.9/prebuilt/linux-x86_64
-
-MIPS_PLATFORM=$NDK/platforms/android-9/arch-mips/
-MIPS_PREBUILT=$NDK/toolchains/mipsel-linux-android-4.9/prebuilt/linux-x86_64
-
-OPENSSL_VERSION="1.1.1c" #1.0.2j #"1.1.0c"
+OPENSSL_VERSION="1.1.1d" #1.0.2j #"1.1.0c"
 
 TOP_ROOT=`pwd`
 BUILD_DIR=${TOP_ROOT}/libs/openssl
@@ -61,55 +46,27 @@ fi
 function build_one
 {
 
-if [ $ARCH == "arm" ]
-then
-    PLATFORM=$ARM_PLATFORM
-    PREBUILT=$ARM_PREBUILT
-    HOST=arm-linux-androideabi
-#added by alexvas
-elif [ $ARCH == "arm64" ]
-then
-    PLATFORM=$ARM64_PLATFORM
-    PREBUILT=$ARM64_PREBUILT
-    HOST=aarch64-linux-android
-elif [ $ARCH == "mips" ]
-then
-    PLATFORM=$MIPS_PLATFORM
-    PREBUILT=$MIPS_PREBUILT
-    HOST=mipsel-linux-android
-#alexvas
-elif [ $ARCH == "x86_64" ]
-then
-    PLATFORM=$X86_64_PLATFORM
-    PREBUILT=$X86_64_PREBUILT
-    HOST=x86_64-linux-android
-else
-    PLATFORM=$X86_PLATFORM
-    PREBUILT=$X86_PREBUILT
-    HOST=i686-linux-android
-fi
-
 INSTALL_DIR=$BUILD_DIR/build/$ABI
 mkdir -p ${INSTALL_DIR}
 
-cd $TOP_ROOT
-. ./Setenv-android.sh $NDK $ANDROID_EABI $ANDROID_ARCH
 cd $SOURCE_OPENSSL
 
-if [ $TARGET == "mips" ]
+API=22
+CC=clang
+PATH=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin:$PATH
+
+if [ $TARGET == "x86_64" ]
 then
-    ./Configure android-mips shared no-ssl2 no-ssl3 no-comp no-hw no-engine --openssldir=$INSTALL_DIR --prefix=$INSTALL_DIR
-elif [ $TARGET == "x86_64" ]
-then
-    ./Configure android64 shared no-ssl2 no-ssl3 no-comp no-hw no-engine --openssldir=$INSTALL_DIR --prefix=$INSTALL_DIR
+    ./Configure android-x86_64 -D__ANDROID_API__=$API shared no-ssl2 no-ssl3 no-comp no-hw no-engine --openssldir=$INSTALL_DIR --prefix=$INSTALL_DIR
 elif [ $TARGET == "x86" ]
 then
-   ./Configure android-x86 shared no-ssl2 no-ssl3 no-comp no-hw no-engine --openssldir=$INSTALL_DIR --prefix=$INSTALL_DIR
+   ./Configure android-x86 -D__ANDROID_API__=$API shared no-ssl2 no-ssl3 no-comp no-hw no-engine --openssldir=$INSTALL_DIR --prefix=$INSTALL_DIR
 elif [ $TARGET == "arm64-v8a" ]
 then
-   ./Configure android64-aarch64 shared no-ssl2 no-ssl3 no-comp no-hw no-engine --openssldir=$INSTALL_DIR --prefix=$INSTALL_DIR
-else
-    ./config shared no-ssl2 no-ssl3 no-comp no-hw no-engine --openssldir=$INSTALL_DIR --prefix=$INSTALL_DIR
+   ./Configure android-arm64 -D__ANDROID_API__=$API shared no-ssl2 no-ssl3 no-comp no-hw no-engine --openssldir=$INSTALL_DIR --prefix=$INSTALL_DIR
+elif [ $TARGET == "armv7-a" ]
+then
+    ./Configure android-arm -D__ANDROID_API__=$API shared no-ssl2 no-ssl3 no-comp no-hw no-engine --openssldir=$INSTALL_DIR --prefix=$INSTALL_DIR
 fi
 
 make clean
@@ -133,23 +90,11 @@ cp -r $INSTALL_DIR/lib/*.so 	${OPENSSL_LIB_DIR}/.
 cp -r $INSTALL_DIR/include/* 	${OPENSSL_INCLUDE_DIR}/.
 }
 
-if [ $TARGET == 'arm' ]; then
-  ABI=armeabi
-  CPU=arm
-  ARCH=arm
-  PREFIX=`pwd`/../jni/openssl-android/armeabi
-  export ANDROID_EABI=arm-linux-androideabi-4.9
-  export ANDROID_ARCH=arch-arm
-  build_one
-fi
-
 if [ $TARGET == 'armv7-a' ]; then
   ABI=armeabi-v7a
   CPU=armv7-a
   ARCH=arm
   PREFIX=`pwd`/../jni/openssl-android/armeabi-v7a
-  export ANDROID_EABI=arm-linux-androideabi-4.9
-  export ANDROID_ARCH=arch-arm
   build_one
 fi
 
@@ -158,18 +103,6 @@ if [ $TARGET == 'x86' ]; then
   CPU=i686
   ARCH=i686
   PREFIX=`pwd`/../jni/openssl-android/x86
-  export ANDROID_EABI=x86-4.9
-  export ANDROID_ARCH=arch-x86
-  build_one
-fi
-
-if [ $TARGET == 'mips' ]; then
-  ABI=mips
-  CPU=mips
-  ARCH=mips
-  PREFIX=`pwd`/../jni/openssl-android/mips
-  export ANDROID_EABI=mipsel-linux-android-4.9
-  export ANDROID_ARCH=arch-mips
   build_one
 fi
 
@@ -178,8 +111,6 @@ if [ $TARGET == 'x86_64' ]; then
   CPU=x86_64
   ARCH=x86_64
   PREFIX=`pwd`/../jni/openssl-android/x86_64
-  export ANDROID_EABI=x86_64-4.9
-  export ANDROID_ARCH=arch-x86_64
   build_one
 fi
 
@@ -188,7 +119,5 @@ if [ $TARGET == 'arm64-v8a' ]; then
   CPU=arm64-v8a
   ARCH=arm64
   PREFIX=`pwd`/../jni/openssl-android/arm64-v8a
-  export ANDROID_EABI=aarch64-linux-android-4.9
-  export ANDROID_ARCH=arch-arm64
   build_one
 fi
