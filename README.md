@@ -4,4 +4,4 @@ Taking reference on [https://github.com/davinctor/CompileFFmpegWithOpenSSL](http
 
 Support armeabi-v7a, arm64-v8a, x86, x86_64
 
-Note: x86 needs to disable asm.
+Note: You need to use --disable-asm option when compiling on x86.
