@@ -3,7 +3,7 @@
 set -e
 
 # Set your own NDK here
-export NDK=/home/luxuan/Program/android-ndk-r20b
+export NDK=/home/luxuan/Program/android-ndk-r21
 
 #export NDK=`grep ndk.dir $PROPS | cut -d'=' -f2`
 
@@ -84,20 +84,20 @@ echo $SSL_EXTRA_CFLAGS
 if [ $ARCH == "arm" ]
 then
     TOOLACHAIN_PREFIX=arm-linux-androideabi
-    TARGET=armv7a-linux-androideabi
+    ANDROID_TARGET=armv7a-linux-androideabi
 #added by alexvas
 elif [ $ARCH == "arm64" ]
 then
     TOOLACHAIN_PREFIX=aarch64-linux-android
-    TARGET=aarch64-linux-android
+    ANDROID_TARGET=aarch64-linux-android
 elif [ $ARCH == "x86_64" ]
 then
     TOOLACHAIN_PREFIX=x86_64-linux-android
-    TARGET=x86_64-linux-android
+    ANDROID_TARGET=x86_64-linux-android
 elif [ $ARCH == "i686" ]
 then
     TOOLACHAIN_PREFIX=i686-linux-android
-    TARGET=i686-linux-android
+    ANDROID_TARGET=i686-linux-android
 fi
 
 pushd $FFMPEG_SOURCE
@@ -121,6 +121,8 @@ openssl_addi_ldflags=""
 INCLUDE_DIR=$BUILD_DIR/include/$ABI
 BINARIES_DIR=$BUILD_DIR/binaries/$ABI
 
+if [ $TARGET == 'x86' ]; then
+
 ./configure \
     --prefix=$PREFIX \
     --target-os=android \
@@ -129,9 +131,49 @@ BINARIES_DIR=$BUILD_DIR/binaries/$ABI
     --enable-cross-compile \
     --extra-libs="-lgcc" \
     --arch=$ARCH \
-    --cc=$TOOLCHAIN/$TARGET$API-clang \
-    --cxx=$TOOLCHAIN/$TARGET$API-clang++ \
-    --ld=$TOOLCHAIN/$TARGET$API-clang \
+    --cc=$TOOLCHAIN/$ANDROID_TARGET$API-clang \
+    --cxx=$TOOLCHAIN/$ANDROID_TARGET$API-clang++ \
+    --ld=$TOOLCHAIN/$ANDROID_TARGET$API-clang \
+    --nm=$TOOLCHAIN/$TOOLACHAIN_PREFIX-nm \
+    --cross-prefix=$TOOLCHAIN/$TOOLACHAIN_PREFIX- \
+    --sysroot=$SYSROOT \
+    --extra-cflags="$OPTIMIZE_CFLAGS $SSL_EXTRA_CFLAGS" \
+    --extra-ldflags="-Wl, -nostdlib -lc -lm -ldl -llog -lz $SSL_EXTRA_LDFLAGS -DOPENSSL_API_COMPAT=0x00908000L" \
+    --disable-static \
+    --disable-ffplay \
+    --disable-ffmpeg \
+    --disable-ffprobe \
+    --disable-doc \
+    --disable-symver \
+    --enable-gpl \
+    --enable-postproc \
+    --disable-encoders \
+    --disable-muxers \
+    --disable-bsfs \
+    --disable-indevs \
+    --disable-outdevs \
+    --disable-devices \
+    --disable-asm \
+    --enable-shared \
+    --enable-small \
+    --enable-encoder=png \
+    --enable-nonfree \
+    --enable-openssl \
+    --enable-protocol=file,ftp,http,https,httpproxy,hls,mmsh,mmst,pipe,rtmp,rtmps,rtmpt,rtmpts,rtp,sctp,srtp,tcp,udp \
+    $ADDITIONAL_CONFIGURE_FLAG || die "Couldn't configure ffmpeg!"
+else
+
+./configure \
+    --prefix=$PREFIX \
+    --target-os=android \
+    --incdir=$INCLUDE_DIR \
+    --libdir=$BINARIES_DIR \
+    --enable-cross-compile \
+    --extra-libs="-lgcc" \
+    --arch=$ARCH \
+    --cc=$TOOLCHAIN/$ANDROID_TARGET$API-clang \
+    --cxx=$TOOLCHAIN/$ANDROID_TARGET$API-clang++ \
+    --ld=$TOOLCHAIN/$ANDROID_TARGET$API-clang \
     --nm=$TOOLCHAIN/$TOOLACHAIN_PREFIX-nm \
     --cross-prefix=$TOOLCHAIN/$TOOLACHAIN_PREFIX- \
     --sysroot=$SYSROOT \
@@ -159,7 +201,9 @@ BINARIES_DIR=$BUILD_DIR/binaries/$ABI
     --enable-openssl \
     --enable-protocol=file,ftp,http,https,httpproxy,hls,mmsh,mmst,pipe,rtmp,rtmps,rtmpt,rtmpts,rtp,sctp,srtp,tcp,udp \
     $ADDITIONAL_CONFIGURE_FLAG || die "Couldn't configure ffmpeg!"
+fi
 
+make clean
 make -j8 install V=1
 $TOOLCHAIN/$TOOLACHAIN_PREFIX-ar d libavcodec/libavcodec.a inverse.o
 
