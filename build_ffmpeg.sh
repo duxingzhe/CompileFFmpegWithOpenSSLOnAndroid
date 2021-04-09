@@ -3,7 +3,7 @@
 set -e
 
 # Set your own NDK here
-export NDK=/home/luxuan/Program/android-ndk-r21
+export NDK=/Users/luxuan/android-sdk/ndk/21.4.7075529
 
 #export NDK=`grep ndk.dir $PROPS | cut -d'=' -f2`
 
@@ -14,11 +14,11 @@ fi
 
 export TARGET=$1
 
-TOOLCHAIN=$NDK/toolchains/llvm/prebuilt/linux-x86_64/bin
-SYSROOT=$NDK/toolchains/llvm/prebuilt/linux-x86_64/sysroot
+TOOLCHAIN=$NDK/toolchains/llvm/prebuilt/darwin-x86_64/bin
+SYSROOT=$NDK/toolchains/llvm/prebuilt/darwin-x86_64/sysroot
 API=22
 
-FFMPEG_VERSION="4.2.2"
+FFMPEG_VERSION="4.4"
 
 TOP_ROOT=$PWD
 SOURCE=${TOP_ROOT}/src
