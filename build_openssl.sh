@@ -4,7 +4,7 @@
 
 export WORKING_DIR=`pwd`
 
-export NDK=/Users/luxuan/android-sdk/ndk/21.4.7075529
+export NDK=/home/luxuan/Program/android-sdk/ndk/23.1.7779620
 
 export ANDROID_NDK_ROOT=$NDK
 
@@ -18,7 +18,7 @@ fi
 
 export TARGET=$1
 
-OPENSSL_VERSION="1.1.1k" #1.0.2j #"1.1.0c"
+OPENSSL_VERSION="3.0.1" #1.0.2j #"1.1.0c"
 
 TOP_ROOT=`pwd`
 BUILD_DIR=${TOP_ROOT}/libs/openssl
@@ -53,7 +53,7 @@ cd $SOURCE_OPENSSL
 
 API=22
 CC=clang
-PATH=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/darwin-x86_64/bin:$PATH
+PATH=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin:$PATH
 
 export CC=clang
 

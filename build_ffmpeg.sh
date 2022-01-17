@@ -3,7 +3,7 @@
 set -e
 
 # Set your own NDK here
-export NDK=/Users/luxuan/android-sdk/ndk/21.4.7075529
+export NDK=/home/luxuan/Program/android-sdk/ndk/23.1.7779620
 
 #export NDK=`grep ndk.dir $PROPS | cut -d'=' -f2`
 
@@ -14,11 +14,11 @@ fi
 
 export TARGET=$1
 
-TOOLCHAIN=$NDK/toolchains/llvm/prebuilt/darwin-x86_64/bin
-SYSROOT=$NDK/toolchains/llvm/prebuilt/darwin-x86_64/sysroot
+TOOLCHAIN=$NDK/toolchains/llvm/prebuilt/linux-x86_64/bin
+SYSROOT=$NDK/toolchains/llvm/prebuilt/linux-x86_64/sysroot
 API=22
 
-FFMPEG_VERSION="4.4"
+FFMPEG_VERSION="5.0"
 
 TOP_ROOT=$PWD
 SOURCE=${TOP_ROOT}/src
@@ -129,13 +129,12 @@ if [ $TARGET == 'x86' ]; then
     --incdir=$INCLUDE_DIR \
     --libdir=$BINARIES_DIR \
     --enable-cross-compile \
-    --extra-libs="-lgcc" \
     --arch=$ARCH \
     --cc=$TOOLCHAIN/$ANDROID_TARGET$API-clang \
     --cxx=$TOOLCHAIN/$ANDROID_TARGET$API-clang++ \
     --ld=$TOOLCHAIN/$ANDROID_TARGET$API-clang \
-    --nm=$TOOLCHAIN/$TOOLACHAIN_PREFIX-nm \
-    --cross-prefix=$TOOLCHAIN/$TOOLACHAIN_PREFIX- \
+    --nm=$TOOLCHAIN/llvm-nm \
+    --cross-prefix=$TOOLCHAIN/llvm- \
     --sysroot=$SYSROOT \
     --extra-cflags="$OPTIMIZE_CFLAGS $SSL_EXTRA_CFLAGS" \
     --extra-ldflags="-Wl, -nostdlib -lc -lm -ldl -llog -lz $SSL_EXTRA_LDFLAGS -DOPENSSL_API_COMPAT=0x00908000L" \
@@ -169,13 +168,12 @@ else
     --incdir=$INCLUDE_DIR \
     --libdir=$BINARIES_DIR \
     --enable-cross-compile \
-    --extra-libs="-lgcc" \
     --arch=$ARCH \
     --cc=$TOOLCHAIN/$ANDROID_TARGET$API-clang \
     --cxx=$TOOLCHAIN/$ANDROID_TARGET$API-clang++ \
     --ld=$TOOLCHAIN/$ANDROID_TARGET$API-clang \
-    --nm=$TOOLCHAIN/$TOOLACHAIN_PREFIX-nm \
-    --cross-prefix=$TOOLCHAIN/$TOOLACHAIN_PREFIX- \
+    --nm=$TOOLCHAIN/llvm-nm \
+    --cross-prefix=$TOOLCHAIN/llvm- \
     --sysroot=$SYSROOT \
     --extra-cflags="$OPTIMIZE_CFLAGS $SSL_EXTRA_CFLAGS" \
     --extra-ldflags="-Wl, -nostdlib -lc -lm -ldl -llog -lz $SSL_EXTRA_LDFLAGS -DOPENSSL_API_COMPAT=0x00908000L" \
@@ -203,9 +201,7 @@ else
     $ADDITIONAL_CONFIGURE_FLAG || die "Couldn't configure ffmpeg!"
 fi
 
-make clean
 make -j8 install V=1
-$TOOLCHAIN/$TOOLACHAIN_PREFIX-ar d libavcodec/libavcodec.a inverse.o
 
 #$PREBUILT/bin/$HOST-ld -rpath-link=$PLATFORM/usr/lib -L$PLATFORM/usr/lib  -soname libffmpeg.so -shared -nostdlib  -z,noexecstack -Bsymbolic --whole-archive --no-undefined -o $PREFIX/libffmpeg.so libavcodec/libavcodec.a libavformat/libavformat.a libavutil/libavutil.a libswscale/libswscale.a -lc -lm -lz -ldl -llog  --warn-once  --dynamic-linker=/system/bin/linker $PREBUILT/lib/gcc/$HOST/4.6/libgcc.a
 popd
