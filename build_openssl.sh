@@ -4,7 +4,7 @@
 
 export WORKING_DIR=`pwd`
 
-export NDK=/home/luxuan/Program/android-sdk/ndk/23.1.7779620
+export NDK=/home/luxuan/Program/android-sdk/ndk/25.2.9519653
 
 export ANDROID_NDK_ROOT=$NDK
 
@@ -18,7 +18,7 @@ fi
 
 export TARGET=$1
 
-OPENSSL_VERSION="3.0.1" #1.0.2j #"1.1.0c"
+OPENSSL_VERSION="3.0.8" #1.0.2j #"1.1.0c"
 
 TOP_ROOT=`pwd`
 BUILD_DIR=${TOP_ROOT}/libs/openssl
@@ -59,16 +59,10 @@ export CC=clang
 
 if [ $TARGET == "x86_64" ]
 then
-    ./Configure android-x86_64 -D__ANDROID_API__=$API shared no-ssl2 no-ssl3 no-comp no-hw no-engine --openssldir=$INSTALL_DIR --prefix=$INSTALL_DIR
-elif [ $TARGET == "x86" ]
-then
-   ./Configure android-x86 -D__ANDROID_API__=$API shared no-ssl2 no-ssl3 no-comp no-hw no-engine --openssldir=$INSTALL_DIR --prefix=$INSTALL_DIR
+    ./Configure android-x86_64 -D__ANDROID_API__=$API shared no-ssl3 no-comp no-engine --openssldir=$INSTALL_DIR --prefix=$INSTALL_DIR
 elif [ $TARGET == "arm64-v8a" ]
 then
-   ./Configure android-arm64 -D__ANDROID_API__=$API shared no-ssl2 no-ssl3 no-comp no-hw no-engine --openssldir=$INSTALL_DIR --prefix=$INSTALL_DIR
-elif [ $TARGET == "armv7-a" ]
-then
-    ./Configure android-arm -D__ANDROID_API__=$API shared no-ssl2 no-ssl3 no-comp no-hw no-engine --openssldir=$INSTALL_DIR --prefix=$INSTALL_DIR
+   ./Configure android-arm64 -D__ANDROID_API__=$API shared no-ssl3 no-comp no-engine --openssldir=$INSTALL_DIR --prefix=$INSTALL_DIR
 fi
 
 make clean
@@ -91,22 +85,6 @@ mkdir -p ${OPENSSL_INCLUDE_DIR}
 cp -r $INSTALL_DIR/lib/*.so 	${OPENSSL_LIB_DIR}/.
 cp -r $INSTALL_DIR/include/* 	${OPENSSL_INCLUDE_DIR}/.
 }
-
-if [ $TARGET == 'armv7-a' ]; then
-  ABI=armeabi-v7a
-  CPU=armv7-a
-  ARCH=arm
-  PREFIX=`pwd`/../jni/openssl-android/armeabi-v7a
-  build_one
-fi
-
-if [ $TARGET == 'x86' ]; then
-  ABI=x86
-  CPU=i686
-  ARCH=i686
-  PREFIX=`pwd`/../jni/openssl-android/x86
-  build_one
-fi
 
 if [ $TARGET == 'x86_64' ]; then
   ABI=x86_64

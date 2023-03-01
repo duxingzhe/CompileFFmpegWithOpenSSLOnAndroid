@@ -3,7 +3,7 @@
 set -e
 
 # Set your own NDK here
-export NDK=/home/luxuan/Program/android-sdk/ndk/23.1.7779620
+export NDK=/home/luxuan/Program/android-sdk/ndk/25.2.9519653
 
 #export NDK=`grep ndk.dir $PROPS | cut -d'=' -f2`
 
@@ -18,7 +18,7 @@ TOOLCHAIN=$NDK/toolchains/llvm/prebuilt/linux-x86_64/bin
 SYSROOT=$NDK/toolchains/llvm/prebuilt/linux-x86_64/sysroot
 API=22
 
-FFMPEG_VERSION="5.0"
+FFMPEG_VERSION="6.0"
 
 TOP_ROOT=$PWD
 SOURCE=${TOP_ROOT}/src
@@ -81,12 +81,7 @@ SSL_EXTRA_CFLAGS="-I$OPENSSL_INCLUDE_DIR"
 echo $SSL_EXTRA_LDFLAGS
 echo $SSL_EXTRA_CFLAGS
 
-if [ $ARCH == "arm" ]
-then
-    TOOLACHAIN_PREFIX=arm-linux-androideabi
-    ANDROID_TARGET=armv7a-linux-androideabi
-#added by alexvas
-elif [ $ARCH == "arm64" ]
+if [ $ARCH == "arm64" ]
 then
     TOOLACHAIN_PREFIX=aarch64-linux-android
     ANDROID_TARGET=aarch64-linux-android
@@ -94,10 +89,6 @@ elif [ $ARCH == "x86_64" ]
 then
     TOOLACHAIN_PREFIX=x86_64-linux-android
     ANDROID_TARGET=x86_64-linux-android
-elif [ $ARCH == "i686" ]
-then
-    TOOLACHAIN_PREFIX=i686-linux-android
-    ANDROID_TARGET=i686-linux-android
 fi
 
 pushd $FFMPEG_SOURCE
@@ -120,47 +111,6 @@ openssl_addi_ldflags=""
 
 INCLUDE_DIR=$BUILD_DIR/include/$ABI
 BINARIES_DIR=$BUILD_DIR/binaries/$ABI
-
-if [ $TARGET == 'x86' ]; then
-
-./configure \
-    --prefix=$PREFIX \
-    --target-os=android \
-    --incdir=$INCLUDE_DIR \
-    --libdir=$BINARIES_DIR \
-    --enable-cross-compile \
-    --arch=$ARCH \
-    --cc=$TOOLCHAIN/$ANDROID_TARGET$API-clang \
-    --cxx=$TOOLCHAIN/$ANDROID_TARGET$API-clang++ \
-    --ld=$TOOLCHAIN/$ANDROID_TARGET$API-clang \
-    --nm=$TOOLCHAIN/llvm-nm \
-    --cross-prefix=$TOOLCHAIN/llvm- \
-    --sysroot=$SYSROOT \
-    --extra-cflags="$OPTIMIZE_CFLAGS $SSL_EXTRA_CFLAGS" \
-    --extra-ldflags="-Wl, -nostdlib -lc -lm -ldl -llog -lz $SSL_EXTRA_LDFLAGS -DOPENSSL_API_COMPAT=0x00908000L" \
-    --disable-static \
-    --disable-ffplay \
-    --disable-ffmpeg \
-    --disable-ffprobe \
-    --disable-doc \
-    --disable-symver \
-    --enable-gpl \
-    --enable-postproc \
-    --disable-encoders \
-    --disable-muxers \
-    --disable-bsfs \
-    --disable-indevs \
-    --disable-outdevs \
-    --disable-devices \
-    --disable-asm \
-    --enable-shared \
-    --enable-small \
-    --enable-encoder=png \
-    --enable-nonfree \
-    --enable-openssl \
-    --enable-protocol=file,ftp,http,https,httpproxy,hls,mmsh,mmst,pipe,rtmp,rtmps,rtmpt,rtmpts,rtp,sctp,srtp,tcp,udp \
-    $ADDITIONAL_CONFIGURE_FLAG || die "Couldn't configure ffmpeg!"
-else
 
 ./configure \
     --prefix=$PREFIX \
@@ -199,8 +149,8 @@ else
     --enable-openssl \
     --enable-protocol=file,ftp,http,https,httpproxy,hls,mmsh,mmst,pipe,rtmp,rtmps,rtmpt,rtmpts,rtp,sctp,srtp,tcp,udp \
     $ADDITIONAL_CONFIGURE_FLAG || die "Couldn't configure ffmpeg!"
-fi
 
+make clean
 make -j8 install V=1
 
 #$PREBUILT/bin/$HOST-ld -rpath-link=$PLATFORM/usr/lib -L$PLATFORM/usr/lib  -soname libffmpeg.so -shared -nostdlib  -z,noexecstack -Bsymbolic --whole-archive --no-undefined -o $PREFIX/libffmpeg.so libavcodec/libavcodec.a libavformat/libavformat.a libavutil/libavutil.a libswscale/libswscale.a -lc -lm -lz -ldl -llog  --warn-once  --dynamic-linker=/system/bin/linker $PREBUILT/lib/gcc/$HOST/4.6/libgcc.a
@@ -246,78 +196,12 @@ cp -r $BINARIES_DIR/libpostproc* 	${LIBPOSTPROC}/.
 ############### END build_one ########################
 ######################################################
 
-if [ $TARGET == 'arm-v5te' ]; then
-    #arm v5te
-    ABI=armeabi
-    CPU=armv5te
-    ARCH=arm
-    OPTIMIZE_CFLAGS="-marm -march=$CPU"
-    PREFIX=$BUILD_DIR/$CPU
-    ADDITIONAL_CONFIGURE_FLAG=
-    build_one
-fi
-
-if [ $TARGET == 'arm-v6' ]; then
-    #arm v6
-    ABI=armeabi
-    CPU=armv6
-    ARCH=arm
-    OPTIMIZE_CFLAGS="-marm -march=$CPU"
-    PREFIX=`pwd`/ffmpeg-android/$CPU
-    ADDITIONAL_CONFIGURE_FLAG=
-    build_one
-fi
-
-if [ $TARGET == 'arm-v7vfpv3' ]; then
-    #arm v7vfpv3
-    ABI=armeabi-v7a
-    CPU=armv7-a
-    ARCH=arm
-    OPTIMIZE_CFLAGS="-mfloat-abi=softfp -mfpu=vfpv3-d16 -marm -march=$CPU "
-    PREFIX=$BUILD_DIR/$CPU
-    ADDITIONAL_CONFIGURE_FLAG=
-    build_one
-fi
-
-if [ $TARGET == 'arm-v7vfp' ]; then
-    #arm v7vfp
-    ABI=armeabi-v7a
-    CPU=armv7-a
-    ARCH=arm
-    OPTIMIZE_CFLAGS="-mfloat-abi=softfp -mfpu=vfp -marm -march=$CPU "
-    PREFIX=`pwd`/ffmpeg-android/$CPU-vfp
-    ADDITIONAL_CONFIGURE_FLAG=
-    build_one
-fi
-
-if [ $TARGET == 'arm-v7n' ]; then
-    #arm v7n
-    ABI=armeabi-v7a
-    CPU=armv7-a
-    ARCH=arm
-    OPTIMIZE_CFLAGS="-mfloat-abi=softfp -mfpu=neon -marm -march=$CPU -mtune=cortex-a8"
-    PREFIX=`pwd`/ffmpeg-android/$CPU
-    ADDITIONAL_CONFIGURE_FLAG=--enable-neon
-    build_one
-fi
-
-if [ $TARGET == 'arm-v6+vfp' ]; then
-    #arm v6+vfp
-    ABI=armeabi
-    CPU=armv6
-    ARCH=arm
-    OPTIMIZE_CFLAGS="-DCMP_HAVE_VFP -mfloat-abi=softfp -mfpu=vfp -marm -march=$CPU"
-    PREFIX=`pwd`/ffmpeg-android/${CPU}_vfp
-    ADDITIONAL_CONFIGURE_FLAG=
-    build_one
-fi
-
 if [ $TARGET == 'arm64-v8a' ]; then
     #arm64-v8a
     ABI=arm64-v8a
     CPU=arm64-v8a
     ARCH=arm64
-    OPTIMIZE_CFLAGS=
+    OPTIMIZE_CFLAGS="-DVK_ENABLE_BETA_EXTENSIONS=0"
     PREFIX=$BUILD_DIR/$CPU
     PREFIX=`pwd`/../jni/ffmpeg/ffmpeg/arm64-v8a
     ADDITIONAL_CONFIGURE_FLAG=
@@ -329,33 +213,10 @@ if [ $TARGET == 'x86_64' ]; then
     ABI=x86_64
     CPU=x86_64
     ARCH=x86_64
-    OPTIMIZE_CFLAGS="-fomit-frame-pointer"
+    OPTIMIZE_CFLAGS="-fomit-frame-pointer -DVK_ENABLE_BETA_EXTENSIONS=0"
     #PREFIX=$BUILD_DIR/$CPU
     PREFIX=`pwd`/../jni/ffmpeg/ffmpeg/x86_64
     ADDITIONAL_CONFIGURE_FLAG=
     build_one
 fi
 
-if [ $TARGET == 'x86' ]; then
-    #x86
-    ABI=x86
-    CPU=i686
-    ARCH=i686
-    OPTIMIZE_CFLAGS="-fomit-frame-pointer"
-    #PREFIX=$BUILD_DIR/$CPU
-    PREFIX=`pwd`/../jni/ffmpeg/ffmpeg/x86
-    ADDITIONAL_CONFIGURE_FLAG=
-    build_one
-fi
-
-if [ $TARGET == 'armv7-a' ]; then
-    #arm armv7-a
-    ABI=armeabi-v7a
-    CPU=armv7-a
-    ARCH=arm
-    OPTIMIZE_CFLAGS="-mfloat-abi=softfp -marm -march=$CPU "
-    #PREFIX=`pwd`/ffmpeg-android/$CPU
-    PREFIX=`pwd`/../jni/ffmpeg/ffmpeg/armeabi-v7a
-    ADDITIONAL_CONFIGURE_FLAG=
-    build_one
-fi
