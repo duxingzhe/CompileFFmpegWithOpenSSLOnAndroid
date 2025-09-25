@@ -128,13 +128,13 @@ BINARIES_DIR=$BUILD_DIR/binaries/$ABI
     --extra-cflags="$OPTIMIZE_CFLAGS $SSL_EXTRA_CFLAGS" \
     --extra-ldflags="-Wl, -nostdlib -lc -lm -ldl -llog -lz $SSL_EXTRA_LDFLAGS -DOPENSSL_API_COMPAT=0x00908000L" \
     --disable-static \
+    --disable-pthread \
     --disable-ffplay \
     --disable-ffmpeg \
     --disable-ffprobe \
     --disable-doc \
     --disable-symver \
     --enable-gpl \
-    --enable-postproc \
     --disable-encoders \
     --disable-muxers \
     --disable-bsfs \
@@ -165,7 +165,6 @@ LIBAVFORMAT_DIR=$LIB_DIR/libavformat/$ABI
 LIBAVUTIL_DIR=$LIB_DIR/libavutil/$ABI
 LIBSWRESAMPLE_DIR=$LIB_DIR/libswresample/$ABI
 LIBSWSCALE_DIR=$LIB_DIR/libswscale/$ABI
-LIBPOSTPROC=$LIB_DIR/libpostproc/$ABI
 mkdir -p ${LIBAVCODEC_DIR}
 mkdir -p ${LIBAVDEVICE_DIR}
 mkdir -p ${LIBAVFILTER_DIR}
@@ -173,7 +172,6 @@ mkdir -p ${LIBAVFORMAT_DIR}
 mkdir -p ${LIBAVUTIL_DIR}
 mkdir -p ${LIBSWRESAMPLE_DIR}
 mkdir -p ${LIBSWSCALE_DIR}
-mkdir -p ${LIBPOSTPROC}
 cp -r $BINARIES_DIR/libavcodec* 	${LIBAVCODEC_DIR}/.
 cp -r $BINARIES_DIR/libavdevice* 	${LIBAVDEVICE_DIR}/.
 cp -r $BINARIES_DIR/libavfilter* 	${LIBAVFILTER_DIR}/.
@@ -181,7 +179,6 @@ cp -r $BINARIES_DIR/libavformat* 	${LIBAVFORMAT_DIR}/.
 cp -r $BINARIES_DIR/libavutil* 		${LIBAVUTIL_DIR}/.
 cp -r $BINARIES_DIR/libswresample* 	${LIBSWRESAMPLE_DIR}/.
 cp -r $BINARIES_DIR/libswscale* 	${LIBSWSCALE_DIR}/.
-cp -r $BINARIES_DIR/libpostproc* 	${LIBPOSTPROC}/.
 #rsync -a --include '*/' --include 'libavcoded' --exclude '*' BUILD_DIR/$ABI/binaries ${dist_lib_root}/
 # copy the executables
 #cp -r ${src_root}/openssl-android/libs/armeabi/openssl ${dist_bin_root}/. # work only for one abi folder

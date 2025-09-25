@@ -18,7 +18,7 @@ fi
 
 export TARGET=$1
 
-OPENSSL_VERSION="3.0.8" #1.0.2j #"1.1.0c"
+OPENSSL_VERSION="3.5.3" #1.0.2j #"1.1.0c"
 
 TOP_ROOT=`pwd`
 BUILD_DIR=${TOP_ROOT}/libs/openssl
@@ -32,7 +32,7 @@ cd $SOURCE
 
 if [ ! -e "openssl-${OPENSSL_VERSION}.tar.gz" ]; then
   echo "Downloading openssl-${OPENSSL_VERSION}.tar.gz"
-  curl -LO https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz
+  curl -LO https://github.com/openssl/openssl/releases/download/openssl-${OPENSSL_VERSION}/openssl-${OPENSSL_VERSION}.tar.gz
   tar -xvf openssl-${OPENSSL_VERSION}.tar.gz -C $SOURCE_OPENSSL --strip-components=1
 else
   echo "Using openssl-${OPENSSL_VERSION}.tar.gz"
