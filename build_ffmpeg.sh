@@ -3,7 +3,7 @@
 set -e
 
 # Set your own NDK here
-export NDK=/home/luxuan/Program/android-sdk/ndk/25.2.9519653
+export NDK=/home/luxuan/Program/android-ndk-r28c
 
 #export NDK=`grep ndk.dir $PROPS | cut -d'=' -f2`
 
@@ -18,7 +18,7 @@ TOOLCHAIN=$NDK/toolchains/llvm/prebuilt/linux-x86_64/bin
 SYSROOT=$NDK/toolchains/llvm/prebuilt/linux-x86_64/sysroot
 API=22
 
-FFMPEG_VERSION="6.0"
+FFMPEG_VERSION="8.0"
 
 TOP_ROOT=$PWD
 SOURCE=${TOP_ROOT}/src
@@ -29,17 +29,6 @@ mkdir -p ${SOURCE}
 mkdir -p ${FFMPEG_SOURCE}
 
 cd $SOURCE
-if [ ! -e "ffmpeg-${FFMPEG_VERSION}.tar.bz2" ]; then
-    echo "Downloading ffmpeg-${FFMPEG_VERSION}.tar.bz2"
-    curl -LO http://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.bz2
-    tar -xvf ffmpeg-${FFMPEG_VERSION}.tar.bz2 -C $FFMPEG_SOURCE --strip-components=1
-    cd $FFMPEG_SOURCE
-    PATCH_ROOT=${TOP_ROOT}/patches
-    # patch the configure script to use an Android-friendly versioning scheme
-    patch -u configure ${PATCH_ROOT}/patch_fix_ffmpeg_lib_name.txt
-else
-    echo "Using ffmpeg-${FFMPEG_VERSION}.tar.bz2"
-fi
 
 #for i in `find diffs -type f`; do
 #    (cd ffmpeg-${FFMPEG_VERSION} && patch -p1 < ../$i)
@@ -128,7 +117,7 @@ BINARIES_DIR=$BUILD_DIR/binaries/$ABI
     --extra-cflags="$OPTIMIZE_CFLAGS $SSL_EXTRA_CFLAGS" \
     --extra-ldflags="-Wl, -nostdlib -lc -lm -ldl -llog -lz $SSL_EXTRA_LDFLAGS -DOPENSSL_API_COMPAT=0x00908000L" \
     --disable-static \
-    --disable-pthread \
+    --disable-pthreads \
     --disable-ffplay \
     --disable-ffmpeg \
     --disable-ffprobe \
