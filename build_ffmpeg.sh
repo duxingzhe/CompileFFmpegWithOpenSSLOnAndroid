@@ -30,6 +30,18 @@ mkdir -p ${FFMPEG_SOURCE}
 
 cd $SOURCE
 
+if [ ! -e "ffmpeg-${FFMPEG_VERSION}.tar.bz2" ]; then
+    echo "Downloading ffmpeg-${FFMPEG_VERSION}.tar.bz2"
+    curl -LO http://ffmpeg.org/releases/ffmpeg-${FFMPEG_VERSION}.tar.bz2
+    tar -xvf ffmpeg-${FFMPEG_VERSION}.tar.bz2 -C $FFMPEG_SOURCE --strip-components=1
+    cd $FFMPEG_SOURCE
+    PATCH_ROOT=${TOP_ROOT}/patches
+    # patch the configure script to use an Android-friendly versioning scheme
+    patch -u configure ${PATCH_ROOT}/patch_fix_ffmpeg_lib_name.txt
+else
+    echo "Using ffmpeg-${FFMPEG_VERSION}.tar.bz2"
+fi
+
 #for i in `find diffs -type f`; do
 #    (cd ffmpeg-${FFMPEG_VERSION} && patch -p1 < ../$i)
 #done

@@ -30,6 +30,14 @@ mkdir -p ${SOURCE_OPENSSL}
 
 cd $SOURCE
 
+if [ ! -e "openssl-${OPENSSL_VERSION}.tar.gz" ]; then
+  echo "Downloading openssl-${OPENSSL_VERSION}.tar.gz"
+  curl -LO https://github.com/openssl/openssl/releases/download/openssl-${OPENSSL_VERSION}/openssl-${OPENSSL_VERSION}.tar.gz
+  tar -xvf openssl-${OPENSSL_VERSION}.tar.gz -C $SOURCE_OPENSSL --strip-components=1
+else
+  echo "Using openssl-${OPENSSL_VERSION}.tar.gz"
+fi
+
 #if [ -d openssl-${OPENSSL_VERSION} ]
 #then
 #    rm -rf openssl-${OPENSSL_VERSION}
